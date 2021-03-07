@@ -1,5 +1,7 @@
 package pgs.cargo;
 
+import java.security.InvalidParameterException;
+
 /**
  * A vehicle that can carry some amount of cargo. Some amount of this cargo may be loaded and unloaded to another
  * cargo vehicle.
@@ -17,7 +19,15 @@ public abstract class CargoVehicle {
      */
     protected int currentLoad;
 
+    /**
+     * Constructs new cargo vehicle with given capacity. If given capacity is not positive, throws {@link InvalidParameterException}.
+     * @param capacity capacity of a vehicle
+     * @throws InvalidParameterException if the capacity is not positive
+     */
     public CargoVehicle(final int capacity) {
+        if (capacity <= 0) {
+            throw new InvalidParameterException("Vehicle capacity has to be positive!");
+        }
         this.capacity = capacity;
     }
 
@@ -49,5 +59,13 @@ public abstract class CargoVehicle {
      */
     public int getCurrentLoad() {
         return currentLoad;
+    }
+
+    /**
+     * Chacks if this vehicle is completely filled up.
+     * @return true, if the vehicle is filled up, otherwise false
+     */
+    public boolean isFilledUp() {
+        return currentLoad == capacity;
     }
 }

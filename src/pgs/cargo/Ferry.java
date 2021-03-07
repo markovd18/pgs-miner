@@ -25,7 +25,7 @@ public class Ferry extends CargoVehicle {
         currentLoad += cargoAmount;
         if (currentLoad < capacity) {
             try {
-                wait();     // Acting as a barrier - everyone who loads has to wait until Lorry is filled
+                wait();     // Acting as a barrier - everyone who loads has to wait until Ferry is filled
             } catch (InterruptedException e) {
                 System.err.println("Waiting thread was unexpectedly interrupted!\n" + e.getMessage());
             }
