@@ -46,7 +46,7 @@ public class Ferry extends CargoVehicle {
      */
     @Override
     public boolean unloadCargo(final CargoVehicle cargoVehicle) {
-        // Lorry doesn't unload onto another vehicle - ignoring passed parameter
+        // Ferry doesn't unload onto another vehicle - ignoring passed parameter
         currentLoad = 0;
         return true;
     }

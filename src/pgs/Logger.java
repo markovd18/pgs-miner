@@ -20,7 +20,7 @@ public class Logger {
     /**
      * Logger instance - acting as a singleton
      */
-    private static Logger INSTANCE = new Logger(LOG_FILE_PATH);
+    private static Logger INSTANCE;
     /**
      * File that will be logged into
      */

@@ -2,7 +2,7 @@ package pgs.worker;
 
 import pgs.HasId;
 import pgs.Logger;
-import pgs.cargo.Ferry;
+import pgs.cargo.CargoVehicle;
 import pgs.cargo.Lorry;
 import pgs.mine.Block;
 import pgs.mine.Mine;
@@ -76,9 +76,9 @@ public class Foreman implements HasId {
     /**
      * Starts delegating work among available workers. If no available workers are passed, immediately returns.
      * @param availableWorkers workers to delegate
-     * @param ferry ferry, that all material from Lorries will be unloaded to
+     * @param cargoVehicle cargo vehicle, that all material will be unloaded to
      */
-    public void delegateWorkers(final WorkerQueue availableWorkers, final Ferry ferry) {
+    public void delegateWorkers(final WorkerQueue availableWorkers, final CargoVehicle cargoVehicle) {
         if (availableWorkers == null || availableWorkers.size() == 0 || mine == null) {
             return;
         }
@@ -87,14 +87,14 @@ public class Foreman implements HasId {
             Worker currentWorker = availableWorkers.getAvailableWorker();
             Block blockToProcess = mine.pollUnprocessedBlock();
 
-            boolean result = currentWorker.processBlock(blockToProcess, () -> {
+            boolean result = currentWorker.processBlock(blockToProcess, () -> { // Adding an action what the worker should do when he's done
                 for (int i = 0; i < blockToProcess.getLength(); i++) {
                     if (!mine.getSteadyLorry().loadCargo(1)) {
                         i--;    // If we didn't succeed with loading, we try again
                     }
 
                     if (mine.getSteadyLorry().isFilledUp()) {
-                        if (!mine.replaceSteadyLorry(new Lorry(Lorry.getDefaultCapacity()), ferry )) { //TODO markovda here has to be a Ferry
+                        if (!mine.replaceSteadyLorry(new Lorry(Lorry.getDefaultCapacity()), cargoVehicle)) {
                             System.err.println("Error while replacing Lorry in the mine!");
                         }
                     }

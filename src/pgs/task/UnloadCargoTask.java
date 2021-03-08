@@ -1,6 +1,9 @@
 package pgs.task;
 
+import pgs.HasId;
 import pgs.cargo.CargoVehicle;
+
+import java.util.Random;
 
 /**
  * Parallel task of unloading cargo from the vehicle.
@@ -9,18 +12,70 @@ import pgs.cargo.CargoVehicle;
  * @since 7.3.2021
  */
 public class UnloadCargoTask implements Runnable {
-
+    /**
+     * Number of milliseconds in one second
+     */
+    private static final int MILLIS_IN_SECOND = 1000;
+    /**
+     * Object performing the unload task.
+     */
+    private final HasId performer;
+    /**
+     * Size of the cargo we are unloading.
+     */
+    private final int cargoSize;
+    /**
+     * Maximum number of seconds it will take to transport to the cargo to the destination.
+     */
+    private final int maxTransportTime;
     /**
      * A vehicle we will be unloading to.
      */
     private final CargoVehicle vehicleToUnloadTo;
 
-    public UnloadCargoTask(final CargoVehicle vehicleToUnloadTo) {
+    /**
+     * Creates new task to unload a cargo. There will be {@code cargoSize} of cargo unloaded by {@code performer}. The cargo will be
+     * transported for maximum of {@code maxTransportTime} to the {@code vehicleToUnloadTo}. {@code vehicleToUnloadTo} may be null -
+     * the cargo will be thrown on the ground maximum of {@code maxTransportTime} distant from initial position.
+     * @param performer object performing this task
+     * @param cargoSize size of cargo to unload
+     * @param maxTransportTime maximum transport time
+     * @param vehicleToUnloadTo vehicle to unload cargo to - may be null
+     */
+    public UnloadCargoTask(final HasId performer, final int cargoSize, final int maxTransportTime, final CargoVehicle vehicleToUnloadTo) {
+        this.performer = performer;
+        this.cargoSize = cargoSize;
+        this.maxTransportTime = maxTransportTime;
         this.vehicleToUnloadTo = vehicleToUnloadTo;
     }
 
     @Override
     public void run() {
+        try {
+            Thread.sleep((long) getNextTransportTime() * MILLIS_IN_SECOND); // Simulating the transportation process
+        } catch (InterruptedException e) {
+            System.err.println("Cargo transporter " + performer.getId() + " was interrupted during cargo transportation!\n" + e.getMessage());
+        }
 
+        if (vehicleToUnloadTo != null && !vehicleToUnloadTo.isFilledUp()) {
+            vehicleToUnloadTo.loadCargo(cargoSize); // If there is the vehicle and is not full, we load the cargo there
+        }
+        //TODO markovd logging?
+
+        // If we cannot load the vehicle, we unload on the ground - do nothing
+
+        try {
+            Thread.sleep((long) getNextTransportTime() * MILLIS_IN_SECOND); // Simulating the return to the station
+        } catch (InterruptedException e) {
+            System.err.println("Cargo transporter " + performer.getId() + " was interrupted during it's return!\n" + e.getMessage());
+        }
+    }
+
+    /**
+     * Returns number of seconds it will take to transport the cargo.
+     * @return number of seconds it will take to transport the cargo.
+     */
+    private int getNextTransportTime() {
+        return new Random().nextInt(this.maxTransportTime) + 1;
     }
 }

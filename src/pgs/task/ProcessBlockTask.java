@@ -39,7 +39,7 @@ public class ProcessBlockTask implements Runnable {
     private final Runnable afterBlockProcessed;
 
     /**
-     * Creates new tast to process a block of resources. Each resource in given block will be processed by a worker with ID {@code workerId}
+     * Creates new task to process a block of resources. Each resource in given block will be processed by a {@code processor}
      * for maximum of {@code maxResourceProcessingTime} seconds. After the block is processed, worker will preform {@code afterBlockProcessed}
      * action. If this action is null, worker will just finish the task.
      * @param processor object performing this task
