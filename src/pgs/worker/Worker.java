@@ -57,15 +57,15 @@ public class Worker implements HasId {
      * @param afterBlockProcessed task to do after processing the block
      * @return true, if block processing has started, otherwise false
      */
-    public boolean processBlock(final Block block, final Runnable afterBlockProcessed) {
+    public Future<?> processBlock(final Block block, final Runnable afterBlockProcessed) {
         if (blockProcessing != null && !blockProcessing.isDone()) {
-            return false; // We are already busy, cannot process multiple blocks
+            return null; // We are already busy, cannot process multiple blocks
         }
 
         blockProcessing = Executors.newSingleThreadExecutor().submit(
                 new ProcessBlockTask(this, block, maxResourceProcessingTime, afterBlockProcessed));
 
-        return true;
+        return blockProcessing;
     }
 
     @Override

@@ -5,6 +5,8 @@ import pgs.cargo.Lorry;
 
 import java.security.InvalidParameterException;
 import java.util.Queue;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 /**
  * Mine contains blocks of resources to be processed by the workers. Mined resources are taken away by
@@ -80,6 +82,19 @@ public class Mine {
     }
 
     /**
+     * Returns number of unprocessed resources in the mine.
+     * @return number of unprocessed resources
+     */
+    public int getUnprocessedResourcesCount() {
+        int resourceCount = 0;
+        for (Block block : unprocessedBlocks) {
+            resourceCount += block.getLength();
+        }
+
+        return resourceCount;
+    }
+
+    /**
      * Adds new resource block to the queue of unprocessed blocks if there was one found.
      * @param block new resource block
      */
@@ -99,16 +114,16 @@ public class Mine {
      * @param vehicleToUnloadTo vehicle to unload filled up Lorry to - may be null
      * @return true, if Lorries were successfully replaced, otherwise false
      */
-    public boolean replaceSteadyLorry(final Lorry newSteadyLorry, final CargoVehicle vehicleToUnloadTo) {
+    public synchronized Future<?> replaceSteadyLorry(final Lorry newSteadyLorry, final CargoVehicle vehicleToUnloadTo) {
         if (this.steadyLorry != null) {
             if (this.steadyLorry.isFilledUp()) {
-                this.steadyLorry.unloadCargo(vehicleToUnloadTo);
+                return this.steadyLorry.unloadCargo(vehicleToUnloadTo);
             } else {
-                return false; // Steady Lorry is not filled up yet, we don't approve the replacement
+                return new FutureTask<>(() -> null); // Steady Lorry is not filled up yet, we don't approve the replacement
             }
         }
 
         this.steadyLorry = newSteadyLorry;
-        return true;
+        return new FutureTask<>(() -> null);
     }
 }

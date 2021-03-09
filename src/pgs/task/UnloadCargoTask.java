@@ -1,6 +1,7 @@
 package pgs.task;
 
 import pgs.HasId;
+import pgs.Logger;
 import pgs.cargo.CargoVehicle;
 
 import java.util.Random;
@@ -51,24 +52,38 @@ public class UnloadCargoTask implements Runnable {
 
     @Override
     public void run() {
+        int transportTime = getNextTransportTime();
+
         try {
-            Thread.sleep((long) getNextTransportTime() * MILLIS_IN_SECOND); // Simulating the transportation process
+            Thread.sleep((long)  transportTime* MILLIS_IN_SECOND); // Simulating the transportation process
         } catch (InterruptedException e) {
             System.err.println("Cargo transporter " + performer.getId() + " was interrupted during cargo transportation!\n" + e.getMessage());
+        }
+
+        if (vehicleToUnloadTo == null) {
+            Logger.getInstance().logEvent(performer, "Vehicle arrived to the unload destination " +
+                    "and unloaded cargo. It took " + transportTime + " seconds.");
+        } else {
+            Logger.getInstance().logEvent(performer, "Vehicle arrived to the " + vehicleToUnloadTo.getClass().getSimpleName() +
+                    " to unload cargo. It took " + transportTime + " seconds.");
         }
 
         if (vehicleToUnloadTo != null && !vehicleToUnloadTo.isFilledUp()) {
             vehicleToUnloadTo.loadCargo(cargoSize); // If there is the vehicle and is not full, we load the cargo there
         }
-        //TODO markovd logging?
 
         // If we cannot load the vehicle, we unload on the ground - do nothing
 
+        transportTime = getNextTransportTime();
         try {
-            Thread.sleep((long) getNextTransportTime() * MILLIS_IN_SECOND); // Simulating the return to the station
+            Thread.sleep((long) transportTime * MILLIS_IN_SECOND); // Simulating the return to the station
         } catch (InterruptedException e) {
             System.err.println("Cargo transporter " + performer.getId() + " was interrupted during it's return!\n" + e.getMessage());
         }
+
+        Logger.getInstance().logEvent(performer, "Vehicle arrived to it's destination. It took " + transportTime + " seconds.");
+
+        System.out.println("Vykládka končí");
     }
 
     /**

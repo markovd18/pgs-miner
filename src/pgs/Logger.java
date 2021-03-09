@@ -100,7 +100,7 @@ public class Logger {
      * @return name of the object
      */
     private String getObjectName(final HasId object) {
-        return object.getClass().getName();
+        return object.getClass().getSimpleName();
     }
 
     /**

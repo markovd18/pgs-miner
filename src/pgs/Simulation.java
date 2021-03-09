@@ -48,6 +48,7 @@ public class Simulation {
 
         Logger.createInstance(config.getOutputFilePath());
         Lorry.setDefaultCapacity(config.getLorryCapacity());
+        Lorry.setDefaultMaxTransportTime(config.getMaxLorryTransportTime());
 
         Mine mine = new Mine(mineMap);
         Foreman foreman = new Foreman(threadCount++);
@@ -57,9 +58,21 @@ public class Simulation {
         }
 
         foreman.analyzeMineResources(mine);
-        mine.replaceSteadyLorry(new Lorry(Lorry.getDefaultCapacity()), null); // null, because there is no steady Lorry atm
+        if (mine.getUnprocessedResourcesCount() % config.getFerryCapacity() != 0) {
+            System.out.println("Cannot execute this simulation!\n Number of resources has to be divisible by Ferry capacity.");
+            return;
+        }
+        if (mine.getUnprocessedResourcesCount() % config.getLorryCapacity() != 0) {
+            System.out.println("Cannot execute this simulation!\n Number of resources has to be divisible by Lorry capacity.");
+        }
 
-        foreman.delegateWorkers(workerQueue, new Ferry(config.getFerryCapacity()));   // Starting the entire parallel simulation
+        mine.replaceSteadyLorry(
+                new Lorry(threadCount++, Lorry.getDefaultCapacity(),
+                        config.getMaxLorryTransportTime()), null); // null, because there is no steady Lorry atm
+
+        foreman.delegateWorkers(workerQueue, new Ferry(threadCount++, config.getFerryCapacity()));   // Starting the entire parallel simulation
+
+        System.out.println("Main konci");
     }
 
     /**

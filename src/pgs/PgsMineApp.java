@@ -40,6 +40,7 @@ public class PgsMineApp {
                 case WORKER_COUNT_FLAG:
                     try {
                         config.setWorkerCount(Integer.parseInt(args[i + 1]));
+                        break;
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid parameter passed as worker count: " + args[i + 1]);
                         System.out.println("Worker count has to be an integer.");
@@ -49,6 +50,7 @@ public class PgsMineApp {
                 case WORKER_TIME_FLAG:
                     try {
                         config.setMaxWorkerResourceProcessingTime(Integer.parseInt(args[i + 1]));
+                        break;
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid parameter passed as max worker resource processing time: " + args[i + 1]);
                         System.out.println("Max worker resource processing time has to be an integer.");
@@ -58,6 +60,7 @@ public class PgsMineApp {
                 case LORRY_CAP_FLAG:
                     try {
                         config.setLorryCapacity(Integer.parseInt(args[i + 1]));
+                        break;
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid parameter passed as lorry capacity: " + args[i + 1]);
                         System.out.println("Lorry capacity has to be an integer.");
@@ -67,6 +70,7 @@ public class PgsMineApp {
                 case LORRY_TIME_FLAG:
                     try {
                         config.setMaxLorryTransportTime(Integer.parseInt(args[i + 1]));
+                        break;
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid parameter passed as max lorry transport time: " + args[i + 1]);
                         System.out.println("Max lorry transport time has to be an integer.");
@@ -76,6 +80,7 @@ public class PgsMineApp {
                 case FERRY_CAP_FLAG:
                     try {
                         config.setFerryCapacity(Integer.parseInt(args[i + 1]));
+                        break;
                     } catch (NumberFormatException e) {
                         System.out.println("Invalid parameter passed as ferry capacity: " + args[i + 1]);
                         System.out.println("Ferry capacity has to be an integer.");
@@ -87,6 +92,11 @@ public class PgsMineApp {
                     printHelp();
                     return;
             }
+        }
+
+        if (config.getFerryCapacity() % config.getLorryCapacity() != 0) {
+            System.out.println("Cannot execute this configuration!");
+            return;
         }
 
         printPassedParameters(config);

@@ -76,6 +76,8 @@ public class ProcessBlockTask implements Runnable {
         if (afterBlockProcessed != null) { // If we were supposed to do something after processing the block, we do it
             afterBlockProcessed.run();
         }
+
+        System.out.println("Worker " + processor.getId() + " dokončil práci.");
     }
 
     /**

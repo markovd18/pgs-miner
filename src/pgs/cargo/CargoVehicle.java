@@ -1,6 +1,9 @@
 package pgs.cargo;
 
+import pgs.HasId;
+
 import java.security.InvalidParameterException;
+import java.util.concurrent.Future;
 
 /**
  * A vehicle that can carry some amount of cargo. Some amount of this cargo may be loaded and unloaded to another
@@ -9,7 +12,11 @@ import java.security.InvalidParameterException;
  * @author <a href="mailto:markovd@students.zcu.cz">David Markov</a>
  * @since 6.3.2021
  */
-public abstract class CargoVehicle {
+public abstract class CargoVehicle implements HasId {
+    /**
+     * ID of this vehicle.
+     */
+    protected final int vehicleId;
     /**
      * Maximum capacity of this vehicle
      */
@@ -24,10 +31,12 @@ public abstract class CargoVehicle {
      * @param capacity capacity of a vehicle
      * @throws InvalidParameterException if the capacity is not positive
      */
-    public CargoVehicle(final int capacity) {
+    public CargoVehicle(final int vehicleId, final int capacity) {
         if (capacity <= 0) {
             throw new InvalidParameterException("Vehicle capacity has to be positive!");
         }
+
+        this.vehicleId = vehicleId;
         this.capacity = capacity;
     }
 
@@ -41,9 +50,9 @@ public abstract class CargoVehicle {
      * Unloads cargo carried by this vehicle. If given cargo vehicle is not null, cargo is loaded onto that vehicle,
      * otherwise it is unloaded elsewhere.
      * @param cargoVehicle cargo vehicle to unload cargo onto - may be null
-     * @return true, if successfully unloaded, otherwise false
+     * @return true, if the unloading process successfully began
      */
-    public abstract boolean unloadCargo(CargoVehicle cargoVehicle);
+    public abstract Future<?> unloadCargo(CargoVehicle cargoVehicle);
 
     /**
      * Returns the maximum capacity of this vehicle.
@@ -67,5 +76,10 @@ public abstract class CargoVehicle {
      */
     public boolean isFilledUp() {
         return currentLoad == capacity;
+    }
+
+    @Override
+    public int getId() {
+        return vehicleId;
     }
 }
