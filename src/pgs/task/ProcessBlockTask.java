@@ -1,7 +1,7 @@
 package pgs.task;
 
-import pgs.HasId;
 import pgs.Logger;
+import pgs.PerformsTask;
 import pgs.mine.Block;
 
 import java.util.Random;
@@ -20,7 +20,7 @@ public class ProcessBlockTask implements Runnable {
     /**
      * Processor performing this task
      */
-    private final HasId processor;
+    private final PerformsTask processor;
     /**
      * Block to be processed
      */
@@ -47,7 +47,7 @@ public class ProcessBlockTask implements Runnable {
      * @param maxResourceProcessingTime maximum number of seconds it will take to process one resource in given block
      * @param afterBlockProcessed task to perform after the block is processed - may be null
      */
-    public ProcessBlockTask(final HasId processor, final Block processedBlock, final int maxResourceProcessingTime, final Runnable afterBlockProcessed) {
+    public ProcessBlockTask(final PerformsTask processor, final Block processedBlock, final int maxResourceProcessingTime, final Runnable afterBlockProcessed) {
         this.processor = processor;
         this.processedBlock = processedBlock;
         this.maxResourceProcessingTime = maxResourceProcessingTime;
@@ -77,7 +77,7 @@ public class ProcessBlockTask implements Runnable {
             afterBlockProcessed.run();
         }
 
-        System.out.println("Worker " + processor.getId() + " dokončil práci.");
+        processor.setTaskDone();    // Letting everyone know we are done
     }
 
     /**

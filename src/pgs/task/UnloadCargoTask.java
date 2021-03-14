@@ -1,7 +1,7 @@
 package pgs.task;
 
-import pgs.HasId;
 import pgs.Logger;
+import pgs.PerformsTask;
 import pgs.cargo.CargoVehicle;
 
 import java.util.Random;
@@ -20,7 +20,7 @@ public class UnloadCargoTask implements Runnable {
     /**
      * Object performing the unload task.
      */
-    private final HasId performer;
+    private final PerformsTask performer;
     /**
      * Size of the cargo we are unloading.
      */
@@ -43,7 +43,7 @@ public class UnloadCargoTask implements Runnable {
      * @param maxTransportTime maximum transport time
      * @param vehicleToUnloadTo vehicle to unload cargo to - may be null
      */
-    public UnloadCargoTask(final HasId performer, final int cargoSize, final int maxTransportTime, final CargoVehicle vehicleToUnloadTo) {
+    public UnloadCargoTask(final PerformsTask performer, final int cargoSize, final int maxTransportTime, final CargoVehicle vehicleToUnloadTo) {
         this.performer = performer;
         this.cargoSize = cargoSize;
         this.maxTransportTime = maxTransportTime;
@@ -82,8 +82,7 @@ public class UnloadCargoTask implements Runnable {
         }
 
         Logger.getInstance().logEvent(performer, "Vehicle arrived to it's destination. It took " + transportTime + " seconds.");
-
-        System.out.println("Vykládka končí");
+        performer.setTaskDone();
     }
 
     /**

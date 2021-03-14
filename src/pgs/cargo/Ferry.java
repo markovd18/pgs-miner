@@ -1,5 +1,7 @@
 package pgs.cargo;
 
+import pgs.Logger;
+
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -10,6 +12,14 @@ import java.util.concurrent.FutureTask;
  * @since 6.3.2021
  */
 public class Ferry extends CargoVehicle {
+    /**
+     * Number of shipped resources by a ferry.
+     */
+    private int shippedResources = 0;
+    /**
+     * Time when the ferry has been emptied of created empty.
+     */
+    private long timeWhenEmptied;
 
     /**
      * Constructs a Ferry with given capacity
@@ -17,6 +27,8 @@ public class Ferry extends CargoVehicle {
      */
     public Ferry(final int ferryId, final int capacity) {
         super(ferryId, capacity);
+
+        timeWhenEmptied = System.currentTimeMillis();
     }
 
     @Override
@@ -28,16 +40,14 @@ public class Ferry extends CargoVehicle {
         currentLoad += cargoAmount;
         if (currentLoad < capacity) {
             try {
-                System.out.println("Vyloženo, čekám na plný náklad");
-                wait();     // Acting as a barrier - everyone who loads has to wait until Ferry is filled
+                Ferry.this.wait();     // Acting as a barrier - everyone who loads has to wait until Ferry is filled
             } catch (InterruptedException e) {
                 System.err.println("Waiting thread was unexpectedly interrupted!\n" + e.getMessage());
             }
 
         } else {
-            System.out.println("Naplněn přívoz, ruším barieru");
             unloadCargo(null);  // who loaded something will be notified
-            notifyAll();    // Ferry is full - cargo will be carried to the other side of the river and everyone
+            Ferry.this.notifyAll();    // Ferry is full - cargo will be carried to the other side of the river and everyone
         }
 
         return true;
@@ -52,8 +62,19 @@ public class Ferry extends CargoVehicle {
     @Override
     public Future<?> unloadCargo(final CargoVehicle cargoVehicle) {
         // Ferry doesn't unload onto another vehicle - ignoring passed parameter
+        long secondsToFull = (System.currentTimeMillis() - timeWhenEmptied) / 1000;
+        shippedResources += currentLoad;
+        Logger.getInstance().logEvent(this, "Ferry shipped out! Filled in " + secondsToFull + " seconds.");
         System.out.println("Ferry shipped out!");
         currentLoad = 0;
         return new FutureTask<>(() -> null);
+    }
+
+    /**
+     * Returns the number of shipped resources by this ferry.
+     * @return number of shipped resources
+     */
+    public int getShippedResources() {
+        return shippedResources;
     }
 }

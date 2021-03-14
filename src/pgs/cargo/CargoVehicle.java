@@ -1,6 +1,6 @@
 package pgs.cargo;
 
-import pgs.HasId;
+import pgs.PerformsTask;
 
 import java.security.InvalidParameterException;
 import java.util.concurrent.Future;
@@ -12,7 +12,7 @@ import java.util.concurrent.Future;
  * @author <a href="mailto:markovd@students.zcu.cz">David Markov</a>
  * @since 6.3.2021
  */
-public abstract class CargoVehicle implements HasId {
+public abstract class CargoVehicle implements PerformsTask {
     /**
      * ID of this vehicle.
      */
@@ -25,6 +25,10 @@ public abstract class CargoVehicle implements HasId {
      * Current amount of loaded cargo
      */
     protected int currentLoad;
+    /**
+     * Flag indicating whether any task is currently in progress or not;
+     */
+    protected boolean taskInProgress = false;
 
     /**
      * Constructs new cargo vehicle with given capacity. If given capacity is not positive, throws {@link InvalidParameterException}.
@@ -81,5 +85,10 @@ public abstract class CargoVehicle implements HasId {
     @Override
     public int getId() {
         return vehicleId;
+    }
+
+    @Override
+    public void setTaskDone() {
+        taskInProgress = false;
     }
 }

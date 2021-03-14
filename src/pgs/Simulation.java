@@ -72,7 +72,6 @@ public class Simulation {
 
         foreman.delegateWorkers(workerQueue, new Ferry(threadCount++, config.getFerryCapacity()));   // Starting the entire parallel simulation
 
-        System.out.println("Main konci");
     }
 
     /**

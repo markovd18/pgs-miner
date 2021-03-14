@@ -1,6 +1,6 @@
 package pgs.worker;
 
-import pgs.HasId;
+import pgs.PerformsTask;
 import pgs.cargo.CargoVehicle;
 import pgs.mine.Block;
 import pgs.task.ProcessBlockTask;
@@ -8,6 +8,8 @@ import pgs.task.ProcessBlockTask;
 import java.security.InvalidParameterException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Worker, who's responsibility is mining blocks of resources and loading them into the {@link CargoVehicle}
@@ -15,7 +17,15 @@ import java.util.concurrent.Future;
  * @author <a href="markovd@students.zcu.cz>David Markov</a>
  * @since 6.3.2021
  */
-public class Worker implements HasId {
+public class Worker implements PerformsTask {
+    /**
+     * Executor for submitting parallel tasks.
+     */
+    private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+    static {
+        executor.allowCoreThreadTimeOut(true);
+        executor.setKeepAliveTime(1, TimeUnit.SECONDS);
+    }
     /**
      * ID of a worker
      */
@@ -25,9 +35,13 @@ public class Worker implements HasId {
      */
     private final int maxResourceProcessingTime;
     /**
-     * The parallel task of processing a block of resources
+     * Number of resources blocks by a worker.
      */
-    private Future<?> blockProcessing;
+    private int processedResources = 0;
+    /**
+     * Flag indicating whether any task is currently in progress.
+     */
+    private boolean taskInProgress = false;
 
     /**
      * Constructs a new worker and trains him in a way, that processing of single resource in a resource block
@@ -43,8 +57,12 @@ public class Worker implements HasId {
         this.workerId = workerId;
     }
 
-    public int getMaxResourceProcessingTime() {
-        return maxResourceProcessingTime;
+    /**
+     * Returns the number of processed resources by this worker.
+     * @return number of processed resources
+     */
+    public int getProcessedResources() {
+        return this.processedResources;
     }
 
     /**
@@ -58,18 +76,23 @@ public class Worker implements HasId {
      * @return true, if block processing has started, otherwise false
      */
     public Future<?> processBlock(final Block block, final Runnable afterBlockProcessed) {
-        if (blockProcessing != null && !blockProcessing.isDone()) {
-            return null; // We are already busy, cannot process multiple blocks
+        if (taskInProgress) {   // We are already busy
+            return null;
         }
 
-        blockProcessing = Executors.newSingleThreadExecutor().submit(
+        taskInProgress = true;
+        processedResources += block.getLength();
+        return executor.submit(
                 new ProcessBlockTask(this, block, maxResourceProcessingTime, afterBlockProcessed));
-
-        return blockProcessing;
     }
 
     @Override
     public int getId() {
         return workerId;
+    }
+
+    @Override
+    public void setTaskDone() {
+        taskInProgress = false;
     }
 }

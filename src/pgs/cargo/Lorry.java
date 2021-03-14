@@ -1,10 +1,13 @@
 package pgs.cargo;
 
+import pgs.Logger;
 import pgs.task.UnloadCargoTask;
 
 import java.security.InvalidParameterException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Lorry is a cargo vehicle, that can be loaded up with some amount of material. Loaded material may be unloaded
@@ -14,9 +17,16 @@ import java.util.concurrent.Future;
  * @since 7.3.2021
  */
 public class Lorry extends CargoVehicle {
-
     /**
-     * Number of milliseconds it takes to load material into the Lotty.
+     * Executor for submitting parallel tasks.
+     */
+    private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+    static {
+        executor.allowCoreThreadTimeOut(true);
+        executor.setKeepAliveTime(1, TimeUnit.SECONDS);
+    }
+    /**
+     * Number of milliseconds it takes to load material into the Lorry.
      */
     private static final int RESOURCE_LOADING_TIME_MILLIS = 1000;
     /**
@@ -35,8 +45,10 @@ public class Lorry extends CargoVehicle {
      * Flag indicating, that there is material already being loaded.
      */
     private boolean loadingInProgress = false;
-
-    private Future<?> cargoUnloading;
+    /**
+     * Time when the lorry has been emptied of created empty.
+     */
+    private long timeWhenEmptied;
 
     /**
      * Constructs new Lorry with given maximum capacity. Transport will take maximum of {@code maxTransportTime} seconds.
@@ -51,6 +63,7 @@ public class Lorry extends CargoVehicle {
         }
 
         this.maxTransportTime = maxTransportTime;
+        timeWhenEmptied = System.currentTimeMillis();
     }
 
     /**
@@ -95,7 +108,7 @@ public class Lorry extends CargoVehicle {
 
     @Override
     public synchronized boolean loadCargo(final int cargoAmount) {
-        if (cargoUnloading != null && !cargoUnloading.isDone()) {
+        if (taskInProgress) {
             return false;   // Unloading cargo, cannot load at the same time
         }
 
@@ -113,12 +126,17 @@ public class Lorry extends CargoVehicle {
         }
 
         try {
-            Thread.sleep(RESOURCE_LOADING_TIME_MILLIS);
+            Thread.sleep((long) cargoAmount * RESOURCE_LOADING_TIME_MILLIS);
         } catch (InterruptedException e) {
             System.err.println("Loading of material into the lorry was interrupted!\n" + e.getMessage());
         }
 
         currentLoad += cargoAmount;
+        if (currentLoad == capacity) {
+            long secondsToFull = (System.currentTimeMillis() - timeWhenEmptied) / 1000;
+            Logger.getInstance().logEvent(this, "Lorry is full. Filled in " + secondsToFull + " seconds.");
+        }
+
         loadingInProgress = false;  // Resetting so others may load
         notify();
 
@@ -127,13 +145,13 @@ public class Lorry extends CargoVehicle {
 
     @Override
     public Future<?> unloadCargo(final CargoVehicle cargoVehicle) {
-        if (cargoUnloading != null && !cargoUnloading.isDone()) {
+        if (taskInProgress) {
             return null;   // Already unloading
         }
 
-        cargoUnloading = Executors.newSingleThreadExecutor().submit(
+        taskInProgress = true;
+        timeWhenEmptied = System.currentTimeMillis();
+        return executor.submit(
                 new UnloadCargoTask(this, this.currentLoad, this.maxTransportTime, cargoVehicle));
-
-        return cargoUnloading;
     }
 }

@@ -3,7 +3,7 @@ package pgs.worker;
 import pgs.HasId;
 import pgs.Logger;
 import pgs.Simulation;
-import pgs.cargo.CargoVehicle;
+import pgs.cargo.Ferry;
 import pgs.cargo.Lorry;
 import pgs.mine.Block;
 import pgs.mine.Mine;
@@ -83,9 +83,9 @@ public class Foreman implements HasId {
     /**
      * Starts delegating work among available workers. If no available workers are passed, immediately returns.
      * @param availableWorkers workers to delegate
-     * @param cargoVehicle cargo vehicle, that all material will be unloaded to
+     * @param ferry ferry, that all material will be unloaded to
      */
-    public void delegateWorkers(final WorkerQueue availableWorkers, final CargoVehicle cargoVehicle) {
+    public void delegateWorkers(final WorkerQueue availableWorkers, final Ferry ferry) {
         if (availableWorkers == null || availableWorkers.size() == 0 || mine == null) {
             return;
         }
@@ -100,15 +100,14 @@ public class Foreman implements HasId {
                 for (int i = 0; i < blockToProcess.getLength(); i++) {
                     if (!mine.getSteadyLorry().loadCargo(1)) {
                         i--;    // If we didn't succeed with loading, we try again
+                        continue;
                     }
 
                     if (mine.getSteadyLorry().isFilledUp()) {
                         Future<?> replacementResult = mine.replaceSteadyLorry(new Lorry(Simulation.threadCount++,
-                                Lorry.getDefaultCapacity(), Lorry.getDefaultMaxTransportTime()), cargoVehicle);
+                                Lorry.getDefaultCapacity(), Lorry.getDefaultMaxTransportTime()), ferry);
 
-                        if (replacementResult == null) {
-                            System.err.println("Error while replacing Lorry in the mine!");
-                        } else {
+                        if (replacementResult != null) {
                             lorryReplacements.add(replacementResult);
                         }
                     }
@@ -125,8 +124,7 @@ public class Foreman implements HasId {
         }
 
         waitForWorksToFinish(blockProcessings, lorryReplacements);
-
-        System.out.println("Všechny bloky zpracovány");
+        informAboutState(availableWorkers, ferry);
     }
 
     private void waitForWorksToFinish(final List<Future<?>> blockProcessings, final List<Future<?>> lorryReplacements) {
@@ -145,6 +143,14 @@ public class Foreman implements HasId {
                 System.err.println("Error while waiting for worker to finish!\n" + e.getMessage());
             }
         }
+    }
+
+    private void informAboutState(final WorkerQueue workers, final Ferry ferry) {
+        for (Worker worker : workers.getWorkers()) {
+            System.out.println("Worker " + worker.getId() + " processed " + worker.getProcessedResources() + " resources.");
+        }
+
+        System.out.println("Total number of shipped resources: " + ferry.getShippedResources());
     }
 
     @Override

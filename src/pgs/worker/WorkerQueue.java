@@ -1,6 +1,7 @@
 package pgs.worker;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 /**
@@ -26,7 +27,7 @@ public class WorkerQueue {
      */
     public synchronized void addWorker(final Worker worker) {
         workers.add(worker);
-        notify();   // If there is anyone waiting for any worker, we notify him
+        WorkerQueue.this.notifyAll();   // If there is anyone waiting for any worker, we notify him
     }
 
     /**
@@ -37,7 +38,7 @@ public class WorkerQueue {
     public synchronized Worker getAvailableWorker() {
         while (workers.isEmpty()) {
             try {
-                wait();     // We need to wait, until there is any worker available
+                WorkerQueue.this.wait();     // We need to wait, until there is any worker available
             } catch (InterruptedException e) {
                 System.err.println("Thread was unexpectedly woken up!\n" + e.getMessage());
             }
@@ -52,5 +53,13 @@ public class WorkerQueue {
      */
     public int size() {
         return workers.size();
+    }
+
+    /**
+     * Returns a copy of the worker queue as a list.
+     * @return list of workers
+     */
+    public List<Worker> getWorkers() {
+        return List.copyOf(workers);
     }
 }

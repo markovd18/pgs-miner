@@ -112,12 +112,15 @@ public class Mine {
      * cargo vehicle. If the steady Lorry is not filled up, the replacement will not be done.
      * @param newSteadyLorry new steady Lorry
      * @param vehicleToUnloadTo vehicle to unload filled up Lorry to - may be null
-     * @return true, if Lorries were successfully replaced, otherwise false
+     * @return future result of lorry unloading or null
      */
     public synchronized Future<?> replaceSteadyLorry(final Lorry newSteadyLorry, final CargoVehicle vehicleToUnloadTo) {
         if (this.steadyLorry != null) {
             if (this.steadyLorry.isFilledUp()) {
-                return this.steadyLorry.unloadCargo(vehicleToUnloadTo);
+
+                Future<?> unloadingResult =  this.steadyLorry.unloadCargo(vehicleToUnloadTo);
+                this.steadyLorry = newSteadyLorry;
+                return unloadingResult;
             } else {
                 return new FutureTask<>(() -> null); // Steady Lorry is not filled up yet, we don't approve the replacement
             }
