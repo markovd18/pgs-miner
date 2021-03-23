@@ -94,11 +94,6 @@ public class PgsMineApp {
             }
         }
 
-        if (config.getFerryCapacity() % config.getLorryCapacity() != 0) {
-            System.out.println("Cannot execute this configuration!");
-            return;
-        }
-
         printPassedParameters(config);
         Simulation.run(config);
     }
@@ -111,7 +106,7 @@ public class PgsMineApp {
                 INPUT_FILE_FLAG + " <input file path>\n" +
                 OUTPUT_FILE_FLAG + " <output file path>\n" +
                 WORKER_COUNT_FLAG + " <worker count>\n" +
-                WORKER_TIME_FLAG + " <max worker resource processing time (sec)>\n" +
+                WORKER_TIME_FLAG + " <max worker resource processing time (ms)>\n" +
                 LORRY_CAP_FLAG + " <Lorry capacity>\n" +
                 LORRY_TIME_FLAG + " <may Lorry transport time>\n" +
                 FERRY_CAP_FLAG + " <Ferry capacity>\n" +
@@ -127,7 +122,7 @@ public class PgsMineApp {
                 INPUT_FILE_FLAG + " " + config.getInputFilePath() + "\n" +
                 OUTPUT_FILE_FLAG + " " + config.getOutputFilePath() +"\n" +
                 WORKER_COUNT_FLAG + " " + config.getWorkerCount() + "\n" +
-                WORKER_TIME_FLAG + " " + config.getMaxWorkerResourceProcessingTime() + "(sec)\n" +
+                WORKER_TIME_FLAG + " " + config.getMaxWorkerResourceProcessingTime() + "(ms)\n" +
                 LORRY_CAP_FLAG + " " + config.getLorryCapacity() + "\n" +
                 LORRY_TIME_FLAG + " " + config.getLorryCapacity() + "\n" +
                 FERRY_CAP_FLAG + " " + config.getFerryCapacity());

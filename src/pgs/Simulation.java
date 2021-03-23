@@ -51,27 +51,32 @@ public class Simulation {
         Lorry.setDefaultMaxTransportTime(config.getMaxLorryTransportTime());
 
         Mine mine = new Mine(mineMap);
+
         Foreman foreman = new Foreman(threadCount++);
+        foreman.analyzeMineResources(mine);
+
+        int lorryCount = mine.getUnprocessedResourcesCount() / config.getLorryCapacity();
+        if (mine.getUnprocessedResourcesCount() % config.getLorryCapacity() != 0) {
+            lorryCount++;
+        }
+
+        if (lorryCount % config.getFerryCapacity() != 0) {
+            System.out.println("Cannot execute this simulation!\n Number of required lorries to carry all resources has to be divisible by Ferry capacity.");
+            return;
+        }
+
+        Ferry ferry = new Ferry(threadCount++, config.getFerryCapacity());
+        mine.replaceSteadyLorry(
+                new Lorry(threadCount++, Lorry.getDefaultCapacity(),
+                        config.getMaxLorryTransportTime(), ferry)); // null, because there is no steady Lorry atm
+
         WorkerQueue workerQueue = new WorkerQueue();
+        Worker.setWorkerCount(config.getWorkerCount());
         for (int i = 0; i < config.getWorkerCount(); i++) {
             workerQueue.addWorker(new Worker(threadCount++, config.getMaxWorkerResourceProcessingTime()));
         }
 
-        foreman.analyzeMineResources(mine);
-        if (mine.getUnprocessedResourcesCount() % config.getFerryCapacity() != 0) {
-            System.out.println("Cannot execute this simulation!\n Number of resources has to be divisible by Ferry capacity.");
-            return;
-        }
-        if (mine.getUnprocessedResourcesCount() % config.getLorryCapacity() != 0) {
-            System.out.println("Cannot execute this simulation!\n Number of resources has to be divisible by Lorry capacity.");
-        }
-
-        mine.replaceSteadyLorry(
-                new Lorry(threadCount++, Lorry.getDefaultCapacity(),
-                        config.getMaxLorryTransportTime()), null); // null, because there is no steady Lorry atm
-
-        foreman.delegateWorkers(workerQueue, new Ferry(threadCount++, config.getFerryCapacity()));   // Starting the entire parallel simulation
-
+        foreman.delegateWorkers(workerQueue, ferry);   // Starting the entire parallel simulation
     }
 
     /**

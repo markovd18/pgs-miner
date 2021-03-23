@@ -23,15 +23,15 @@ public class Worker implements PerformsTask {
      */
     private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     static {
-        executor.allowCoreThreadTimeOut(true);
-        executor.setKeepAliveTime(1, TimeUnit.SECONDS);
+//        executor.allowCoreThreadTimeOut(true);
+        executor.setKeepAliveTime(0L, TimeUnit.MILLISECONDS);
     }
     /**
      * ID of a worker
      */
     private final int workerId;
     /**
-     * Maximum number of seconds that it takes to process one block
+     * Maximum number of milliseconds that it takes to process one block
      */
     private final int maxResourceProcessingTime;
     /**
@@ -84,6 +84,21 @@ public class Worker implements PerformsTask {
         processedResources += block.getLength();
         return executor.submit(
                 new ProcessBlockTask(this, block, maxResourceProcessingTime, afterBlockProcessed));
+    }
+
+    /**
+     * Sets the core expected number of workers, that will perform asynchronous tasks, to given value.
+     * @param workerCount expected number of workers to perform an asynchronous task
+     */
+    public static void setWorkerCount(final int workerCount) {
+        executor.setCorePoolSize(workerCount);
+    }
+
+    /**
+     * All workers will be sent home and all their actions will be ended.
+     */
+    public static void sendWorkersHome() {
+        executor.shutdown();
     }
 
     @Override

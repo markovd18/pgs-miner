@@ -14,10 +14,6 @@ import java.util.Random;
  */
 public class ProcessBlockTask implements Runnable {
     /**
-     * Number of milliseconds in one second
-     */
-    private static final int MILLIS_IN_SECOND = 1000;
-    /**
      * Processor performing this task
      */
     private final PerformsTask processor;
@@ -26,7 +22,7 @@ public class ProcessBlockTask implements Runnable {
      */
     private final Block processedBlock;
     /**
-     * Maximum time in seconds it may take to process a single resource in a block
+     * Maximum time in milliseconds it may take to process a single resource in a block
      */
     private final int maxResourceProcessingTime;
     /**
@@ -44,7 +40,7 @@ public class ProcessBlockTask implements Runnable {
      * action. If this action is null, worker will just finish the task.
      * @param processor object performing this task
      * @param processedBlock block of resources to process
-     * @param maxResourceProcessingTime maximum number of seconds it will take to process one resource in given block
+     * @param maxResourceProcessingTime maximum number of milliseconds it will take to process one resource in given block
      * @param afterBlockProcessed task to perform after the block is processed - may be null
      */
     public ProcessBlockTask(final PerformsTask processor, final Block processedBlock, final int maxResourceProcessingTime, final Runnable afterBlockProcessed) {
@@ -60,18 +56,18 @@ public class ProcessBlockTask implements Runnable {
             int resourceProcessingTime = getNextResourceProcessingTime();
 
             try {
-                Thread.sleep((long)  resourceProcessingTime * MILLIS_IN_SECOND); // Simulating processing of the resource
+                Thread.sleep(resourceProcessingTime); // Simulating processing of the resource
             } catch (InterruptedException e) {
                 System.err.println("Resource processor " + processor.getId() + " was interrupted during resource processing!\n" + e.getMessage());
             }
 
             this.blockProcessingTime += resourceProcessingTime;
             Logger.getInstance().logEvent(
-                    processor, "Resource processing finished (took " + resourceProcessingTime + " seconds)");
+                    processor, "Resource processing finished (took " + resourceProcessingTime + " ms)");
         }
 
         Logger.getInstance().logEvent(
-                processor, "Block processing finished (took " + blockProcessingTime + " seconds)");
+                processor, "Block processing finished (took " + blockProcessingTime + " ms)");
 
         if (afterBlockProcessed != null) { // If we were supposed to do something after processing the block, we do it
             afterBlockProcessed.run();

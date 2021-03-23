@@ -1,8 +1,8 @@
 package pgs.task;
 
 import pgs.Logger;
-import pgs.PerformsTask;
 import pgs.cargo.CargoVehicle;
+import pgs.cargo.Ferry;
 
 import java.util.Random;
 
@@ -14,40 +14,29 @@ import java.util.Random;
  */
 public class UnloadCargoTask implements Runnable {
     /**
-     * Number of milliseconds in one second
-     */
-    private static final int MILLIS_IN_SECOND = 1000;
-    /**
      * Object performing the unload task.
      */
-    private final PerformsTask performer;
-    /**
-     * Size of the cargo we are unloading.
-     */
-    private final int cargoSize;
+    private final CargoVehicle<?> performer;
     /**
      * Maximum number of seconds it will take to transport to the cargo to the destination.
      */
     private final int maxTransportTime;
     /**
-     * A vehicle we will be unloading to.
+     * A ferry on the way to unload the vehicle.
      */
-    private final CargoVehicle vehicleToUnloadTo;
+    private final Ferry ferryOnTheWay;
 
     /**
      * Creates new task to unload a cargo. There will be {@code cargoSize} of cargo unloaded by {@code performer}. The cargo will be
-     * transported for maximum of {@code maxTransportTime} to the {@code vehicleToUnloadTo}. {@code vehicleToUnloadTo} may be null -
-     * the cargo will be thrown on the ground maximum of {@code maxTransportTime} distant from initial position.
+     * transported for maximum of {@code maxTransportTime} milliseconds.
      * @param performer object performing this task
-     * @param cargoSize size of cargo to unload
      * @param maxTransportTime maximum transport time
-     * @param vehicleToUnloadTo vehicle to unload cargo to - may be null
+     * @param ferryOnTheWay ferry to load the performer to, to cross the river - may be null, if not unloading across the river
      */
-    public UnloadCargoTask(final PerformsTask performer, final int cargoSize, final int maxTransportTime, final CargoVehicle vehicleToUnloadTo) {
+    public UnloadCargoTask(final CargoVehicle<?> performer, final int maxTransportTime, final Ferry ferryOnTheWay) {
         this.performer = performer;
-        this.cargoSize = cargoSize;
         this.maxTransportTime = maxTransportTime;
-        this.vehicleToUnloadTo = vehicleToUnloadTo;
+        this.ferryOnTheWay = ferryOnTheWay;
     }
 
     @Override
@@ -55,33 +44,30 @@ public class UnloadCargoTask implements Runnable {
         int transportTime = getNextTransportTime();
 
         try {
-            Thread.sleep((long)  transportTime* MILLIS_IN_SECOND); // Simulating the transportation process
+            Thread.sleep(transportTime); // Simulating the transportation process
         } catch (InterruptedException e) {
             System.err.println("Cargo transporter " + performer.getId() + " was interrupted during cargo transportation!\n" + e.getMessage());
         }
 
-        if (vehicleToUnloadTo == null) {
+        if (ferryOnTheWay == null) {
             Logger.getInstance().logEvent(performer, "Vehicle arrived to the unload destination " +
-                    "and unloaded cargo. It took " + transportTime + " seconds.");
+                    "and unloaded cargo. It took " + transportTime + " ms.");
+            return;
         } else {
-            Logger.getInstance().logEvent(performer, "Vehicle arrived to the " + vehicleToUnloadTo.getClass().getSimpleName() +
-                    " to unload cargo. It took " + transportTime + " seconds.");
+            Logger.getInstance().logEvent(performer, "Vehicle arrived to the " + Ferry.class.getSimpleName() +
+                    " to cross the river. It took " + transportTime + " ms.");
         }
 
-        if (vehicleToUnloadTo != null && !vehicleToUnloadTo.isFilledUp()) {
-            vehicleToUnloadTo.loadCargo(cargoSize); // If there is the vehicle and is not full, we load the cargo there
-        }
+        ferryOnTheWay.loadCargo(performer); // The ferry is not null, so the performer has to be loaded onto the ferry - may block
 
-        // If we cannot load the vehicle, we unload on the ground - do nothing
-
-        transportTime = getNextTransportTime();
+        transportTime = getNextTransportTime(); // Unloaded from the ferry, transporting the cargo
         try {
-            Thread.sleep((long) transportTime * MILLIS_IN_SECOND); // Simulating the return to the station
+            Thread.sleep(transportTime); // Simulating the transport to the station
         } catch (InterruptedException e) {
             System.err.println("Cargo transporter " + performer.getId() + " was interrupted during it's return!\n" + e.getMessage());
         }
 
-        Logger.getInstance().logEvent(performer, "Vehicle arrived to it's destination. It took " + transportTime + " seconds.");
+        Logger.getInstance().logEvent(performer, "Vehicle arrived to it's destination. It took " + transportTime + " ms.");
         performer.setTaskDone();
     }
 

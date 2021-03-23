@@ -9,22 +9,19 @@ import java.util.concurrent.Future;
  * A vehicle that can carry some amount of cargo. Some amount of this cargo may be loaded and unloaded to another
  * cargo vehicle.
  *
+ * @param <T> type of cargo to be loaded onto the cargo vehicle
  * @author <a href="mailto:markovd@students.zcu.cz">David Markov</a>
  * @since 6.3.2021
  */
-public abstract class CargoVehicle implements PerformsTask {
-    /**
-     * ID of this vehicle.
-     */
-    protected final int vehicleId;
+public abstract class CargoVehicle<T> implements PerformsTask {
     /**
      * Maximum capacity of this vehicle
      */
-    protected final int capacity;
+    private final int capacity;
     /**
-     * Current amount of loaded cargo
+     * ID of this vehicle.
      */
-    protected int currentLoad;
+    private final int vehicleId;
     /**
      * Flag indicating whether any task is currently in progress or not;
      */
@@ -45,18 +42,16 @@ public abstract class CargoVehicle implements PerformsTask {
     }
 
     /**
-     * Loads given amount of cargo onto the vehicle. The amount has to be positive.
-     * @param cargoAmount amount of cargo to load
+     * Loads given cargo unit onto the vehicle.
+     * @param cargoUnit cargo to load
      */
-    public abstract boolean loadCargo(int cargoAmount);
+    public abstract boolean loadCargo(T cargoUnit);
 
     /**
-     * Unloads cargo carried by this vehicle. If given cargo vehicle is not null, cargo is loaded onto that vehicle,
-     * otherwise it is unloaded elsewhere.
-     * @param cargoVehicle cargo vehicle to unload cargo onto - may be null
+     * Unloads cargo carried by this vehicle.
      * @return true, if the unloading process successfully began
      */
-    public abstract Future<?> unloadCargo(CargoVehicle cargoVehicle);
+    public abstract Future<?> unloadCargo();
 
     /**
      * Returns the maximum capacity of this vehicle.
@@ -67,20 +62,16 @@ public abstract class CargoVehicle implements PerformsTask {
     }
 
     /**
-     * Returns the amount of currently loaded cargo.
-     * @return current amount of loaded cargo
+     * Returns the number of currently loaded cargo.
+     * @return current load
      */
-    public int getCurrentLoad() {
-        return currentLoad;
-    }
+    public abstract int getCurrentLoad();
 
     /**
-     * Chacks if this vehicle is completely filled up.
+     * Checks if the vehicle is completely filled up.
      * @return true, if the vehicle is filled up, otherwise false
      */
-    public boolean isFilledUp() {
-        return currentLoad == capacity;
-    }
+    public abstract boolean isFilledUp();
 
     @Override
     public int getId() {

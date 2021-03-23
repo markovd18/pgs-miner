@@ -2,16 +2,19 @@ package pgs.cargo;
 
 import pgs.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 /**
- * Ferry is loaded on the river side of the mine and transports loaded cargo to the other side of the river.
+ * Ferry is specialized cargo vehicle that can be loaded with Lorries ({@link Lorry}) and transports them
+ * across the river.
  *
  * @author <a href="mailto:markovd@students.zcu.cz">David Markov</a>
  * @since 6.3.2021
  */
-public class Ferry extends CargoVehicle {
+public class Ferry extends CargoVehicle<CargoVehicle<?>> {
     /**
      * Number of shipped resources by a ferry.
      */
@@ -20,53 +23,91 @@ public class Ferry extends CargoVehicle {
      * Time when the ferry has been emptied of created empty.
      */
     private long timeWhenEmptied;
+    /**
+     * List of vehicles currently loaded on the Ferry.
+     */
+    private final List<CargoVehicle<?>> loadedVehicles;
+    /**
+     * Flag indicating whether the ferry is waiting in dock to be loaded or not.
+     */
+    private boolean waitingInDock = true;
 
     /**
      * Constructs a Ferry with given capacity
+     * @param ferryId identifier of the Ferry
      * @param capacity maximum capacity
      */
     public Ferry(final int ferryId, final int capacity) {
         super(ferryId, capacity);
 
+        loadedVehicles = new ArrayList<>();
         timeWhenEmptied = System.currentTimeMillis();
     }
 
     @Override
-    public synchronized boolean loadCargo(final int cargoAmount) {
-        if ((currentLoad + cargoAmount) > capacity) {
-            return false; // Cannot load so many cargo
+    public boolean isFilledUp() {
+        return false;
+    }
+
+    /**
+     * Loads given cargo vehicle to the Ferry. If the ferry is already full, returns false.
+     * @param cargoVehicle cargo vehicle to load
+     * @return true if successfully loaded, otherwise false
+     */
+    @Override
+    public synchronized boolean loadCargo(final CargoVehicle<?> cargoVehicle) {
+        while (!waitingInDock) {
+            try {
+                Ferry.this.wait();
+            } catch (InterruptedException e) {
+                System.err.println("Waiting on ferry to arrive to the dock was interrupted!\n" + e.getMessage());
+            }
         }
 
-        currentLoad += cargoAmount;
-        if (currentLoad < capacity) {
-            try {
-                Ferry.this.wait();     // Acting as a barrier - everyone who loads has to wait until Ferry is filled
-            } catch (InterruptedException e) {
-                System.err.println("Waiting thread was unexpectedly interrupted!\n" + e.getMessage());
+        loadedVehicles.add(cargoVehicle);
+        if (loadedVehicles.size() < getCapacity()) {
+            while (waitingInDock) {
+                try {
+                    System.out.println("Náklaďák " + cargoVehicle.getId() + " čeká na naplnění přívozu.");
+                    Ferry.this.wait();     // Acting as a barrier - everyone who loads has to wait until Ferry is filled
+                } catch (InterruptedException e) {
+                    System.err.println("Waiting thread was unexpectedly interrupted!\n" + e.getMessage());
+                }
             }
 
         } else {
-            unloadCargo(null);  // who loaded something will be notified
-            Ferry.this.notifyAll();    // Ferry is full - cargo will be carried to the other side of the river and everyone
+            long secondsToFull = (System.currentTimeMillis() - timeWhenEmptied) / 1000;
+            Logger.getInstance().logEvent(this, "Ferry shipped out! Filled in " + secondsToFull + " seconds.");
+            unloadCargo();
+            Ferry.this.notifyAll();
+        }
+
+        loadedVehicles.remove(cargoVehicle);
+        System.out.println("Náklaďák " + cargoVehicle.getId() + " vyjel z přívozu.");
+        if (loadedVehicles.isEmpty()) {
+            waitingInDock = true;   // All vehicles unloaded, going back to the dock
+            Ferry.this.notifyAll();
         }
 
         return true;
     }
 
+    @Override
+    public int getCurrentLoad() {
+        return loadedVehicles.size();
+    }
+
     /**
      * Ferry unloads carried cargo on the other side of the river. This operation is instant. Cargo is unloaded
      * on the ground, therefore passed parameter is ignored.
-     * @param cargoVehicle ignored
      * @return always true
      */
     @Override
-    public Future<?> unloadCargo(final CargoVehicle cargoVehicle) {
-        // Ferry doesn't unload onto another vehicle - ignoring passed parameter
-        long secondsToFull = (System.currentTimeMillis() - timeWhenEmptied) / 1000;
-        shippedResources += currentLoad;
-        Logger.getInstance().logEvent(this, "Ferry shipped out! Filled in " + secondsToFull + " seconds.");
+    public Future<?> unloadCargo() {
         System.out.println("Ferry shipped out!");
-        currentLoad = 0;
+        waitingInDock = false;
+        shippedResources += loadedVehicles.stream().mapToInt(CargoVehicle::getCurrentLoad).sum();
+        timeWhenEmptied = System.currentTimeMillis();
         return new FutureTask<>(() -> null);
     }
 

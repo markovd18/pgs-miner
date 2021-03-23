@@ -19,7 +19,7 @@ public class Map {
     /**
      * Set of illegal characters that should not be located in the input file
      */
-    private static final String ILLEGAL_CHARACTERS = "[^x ]+";
+    private static final String ILLEGAL_CHARACTERS = "[^X ]+";
     /**
      * Input map file
      */

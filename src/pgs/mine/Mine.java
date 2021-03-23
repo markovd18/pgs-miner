@@ -1,6 +1,5 @@
 package pgs.mine;
 
-import pgs.cargo.CargoVehicle;
 import pgs.cargo.Lorry;
 
 import java.security.InvalidParameterException;
@@ -111,19 +110,13 @@ public class Mine {
      * one steady lorry at the entrance and is filled up to a maximum load, it will be sent to unload to given
      * cargo vehicle. If the steady Lorry is not filled up, the replacement will not be done.
      * @param newSteadyLorry new steady Lorry
-     * @param vehicleToUnloadTo vehicle to unload filled up Lorry to - may be null
      * @return future result of lorry unloading or null
      */
-    public synchronized Future<?> replaceSteadyLorry(final Lorry newSteadyLorry, final CargoVehicle vehicleToUnloadTo) {
+    public synchronized Future<?> replaceSteadyLorry(final Lorry newSteadyLorry) {
         if (this.steadyLorry != null) {
-            if (this.steadyLorry.isFilledUp()) {
-
-                Future<?> unloadingResult =  this.steadyLorry.unloadCargo(vehicleToUnloadTo);
-                this.steadyLorry = newSteadyLorry;
-                return unloadingResult;
-            } else {
-                return new FutureTask<>(() -> null); // Steady Lorry is not filled up yet, we don't approve the replacement
-            }
+            Future<?> unloadingResult =  this.steadyLorry.unloadCargo();
+            this.steadyLorry = newSteadyLorry;
+            return unloadingResult;
         }
 
         this.steadyLorry = newSteadyLorry;

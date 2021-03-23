@@ -56,7 +56,7 @@ public class Foreman implements HasId {
         int currentBlockSize = 0;
         for (String line : mine.getMineMap().getLines()) {
             for (int i = 0; i < line.length(); i++) {
-                if (line.charAt(i) == 'x') {    // Found resource, incrementing size of the block
+                if (line.charAt(i) == 'X') {    // Found resource, incrementing size of the block
                     currentBlockSize++;
                 } else if (currentBlockSize > 0) {  // Found free space, if there was block, create it
                     resourceCount += currentBlockSize;
@@ -105,7 +105,7 @@ public class Foreman implements HasId {
 
                     if (mine.getSteadyLorry().isFilledUp()) {
                         Future<?> replacementResult = mine.replaceSteadyLorry(new Lorry(Simulation.threadCount++,
-                                Lorry.getDefaultCapacity(), Lorry.getDefaultMaxTransportTime()), ferry);
+                                Lorry.getDefaultCapacity(), Lorry.getDefaultMaxTransportTime(), ferry));
 
                         if (replacementResult != null) {
                             lorryReplacements.add(replacementResult);
@@ -136,6 +136,10 @@ public class Foreman implements HasId {
             }
         }
 
+        if (mine.getSteadyLorry().getCurrentLoad() != 0) {
+             lorryReplacements.add(mine.replaceSteadyLorry(null));  // If the last lorry was left not filled up, sending it away manually
+        }
+
         for (Future<?> lorryReplacement : lorryReplacements) {
             try {
                 lorryReplacement.get();
@@ -143,6 +147,8 @@ public class Foreman implements HasId {
                 System.err.println("Error while waiting for worker to finish!\n" + e.getMessage());
             }
         }
+
+        Worker.sendWorkersHome();
     }
 
     private void informAboutState(final WorkerQueue workers, final Ferry ferry) {

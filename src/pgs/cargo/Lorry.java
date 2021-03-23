@@ -16,13 +16,13 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:markovd@students.zcu.cz">David Markov</a>
  * @since 7.3.2021
  */
-public class Lorry extends CargoVehicle {
+public class Lorry extends CargoVehicle<Integer> {
     /**
      * Executor for submitting parallel tasks.
      */
     private static final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     static {
-        executor.allowCoreThreadTimeOut(true);
+        executor.allowCoreThreadTimeOut(true);  // Lorry tasks will be executed in new cached threads, which will be created on the run, if needed
         executor.setKeepAliveTime(1, TimeUnit.SECONDS);
     }
     /**
@@ -38,7 +38,11 @@ public class Lorry extends CargoVehicle {
      */
     private static int defaultMaxTransportTime;
     /**
-     * Maximum number of seconds it will take to transport the vehicle.
+     * Number of currently loaded resources.
+     */
+    private int currentLoad;
+    /**
+     * Maximum number of milliseconds it will take to transport the vehicle.
      */
     private final int maxTransportTime;
     /**
@@ -49,21 +53,27 @@ public class Lorry extends CargoVehicle {
      * Time when the lorry has been emptied of created empty.
      */
     private long timeWhenEmptied;
+    /**
+     * Ferry on the way to unload the cargo.
+     */
+    private final Ferry ferryOnTheWay;
 
     /**
-     * Constructs new Lorry with given maximum capacity. Transport will take maximum of {@code maxTransportTime} seconds.
+     * Constructs new Lorry with given maximum capacity. Transport will take maximum of {@code maxTransportTime} milliseconds.
      * @param capacity maximum capacity of this Lorry
-     * @param maxTransportTime maximum number of seconds it must take to transport somewhere
+     * @param maxTransportTime maximum number of milliseconds it must take to transport somewhere
+     * @param ferry ferry to travel to on the way to unload the cargo
      */
-    public Lorry(final int lorryId, final int capacity, final int maxTransportTime) {
+    public Lorry(final int lorryId, final int capacity, final int maxTransportTime, final Ferry ferry) {
         super(lorryId, capacity);
 
         if (maxTransportTime <= 0) {
             throw new InvalidParameterException("Maximum transport time has to be positive!");
         }
 
+        this.ferryOnTheWay = ferry;
         this.maxTransportTime = maxTransportTime;
-        timeWhenEmptied = System.currentTimeMillis();
+        this.timeWhenEmptied = System.currentTimeMillis();
     }
 
     /**
@@ -107,7 +117,7 @@ public class Lorry extends CargoVehicle {
     }
 
     @Override
-    public synchronized boolean loadCargo(final int cargoAmount) {
+    public synchronized boolean loadCargo(final Integer cargoAmount) {
         if (taskInProgress) {
             return false;   // Unloading cargo, cannot load at the same time
         }
@@ -117,13 +127,14 @@ public class Lorry extends CargoVehicle {
                 wait();
             } catch (InterruptedException e) {
                 System.err.println("Waiting for material loading was interrupted!\n" + e.getMessage());
-                return false;   // Returning, so we are still thread safe
             }
         }
 
-        if ((currentLoad + cargoAmount) > capacity) {
+        if ((currentLoad + cargoAmount) > getCapacity()) {
             return false; // Cannot load so many cargo
         }
+
+        loadingInProgress = true;
 
         try {
             Thread.sleep((long) cargoAmount * RESOURCE_LOADING_TIME_MILLIS);
@@ -132,7 +143,7 @@ public class Lorry extends CargoVehicle {
         }
 
         currentLoad += cargoAmount;
-        if (currentLoad == capacity) {
+        if (currentLoad == getCapacity()) {
             long secondsToFull = (System.currentTimeMillis() - timeWhenEmptied) / 1000;
             Logger.getInstance().logEvent(this, "Lorry is full. Filled in " + secondsToFull + " seconds.");
         }
@@ -144,7 +155,17 @@ public class Lorry extends CargoVehicle {
     }
 
     @Override
-    public Future<?> unloadCargo(final CargoVehicle cargoVehicle) {
+    public int getCurrentLoad() {
+        return currentLoad;
+    }
+
+    @Override
+    public boolean isFilledUp() {
+        return currentLoad == getCapacity();
+    }
+
+    @Override
+    public Future<?> unloadCargo() {
         if (taskInProgress) {
             return null;   // Already unloading
         }
@@ -152,6 +173,6 @@ public class Lorry extends CargoVehicle {
         taskInProgress = true;
         timeWhenEmptied = System.currentTimeMillis();
         return executor.submit(
-                new UnloadCargoTask(this, this.currentLoad, this.maxTransportTime, cargoVehicle));
+                new UnloadCargoTask(this, this.maxTransportTime, ferryOnTheWay));
     }
 }
