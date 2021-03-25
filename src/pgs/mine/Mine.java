@@ -85,12 +85,9 @@ public class Mine {
      * @return number of unprocessed resources
      */
     public int getUnprocessedResourcesCount() {
-        int resourceCount = 0;
-        for (Block block : unprocessedBlocks) {
-            resourceCount += block.getLength();
-        }
-
-        return resourceCount;
+        return unprocessedBlocks.stream()
+                .mapToInt(Block::getLength)
+                .sum();
     }
 
     /**
