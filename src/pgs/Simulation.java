@@ -65,16 +65,16 @@ public class Simulation {
             return;
         }
 
-        Ferry ferry = new Ferry(threadCount++, config.getFerryCapacity());
-        mine.replaceSteadyLorry(
-                new Lorry(threadCount++, Lorry.getDefaultCapacity(),
-                        config.getMaxLorryTransportTime(), ferry)); // null, because there is no steady Lorry atm
-
         WorkerQueue workerQueue = new WorkerQueue();
         Worker.setWorkerCount(config.getWorkerCount());
         for (int i = 0; i < config.getWorkerCount(); i++) {
             workerQueue.addWorker(new Worker(threadCount++, config.getMaxWorkerResourceProcessingTime()));
         }
+
+        Ferry ferry = new Ferry(threadCount++, config.getFerryCapacity());
+        mine.replaceSteadyLorry(
+                new Lorry(threadCount++, Lorry.getDefaultCapacity(),
+                        config.getMaxLorryTransportTime(), ferry)); // null, because there is no steady Lorry atm
 
         foreman.delegateWorkers(workerQueue, ferry);   // Starting the entire parallel simulation
     }

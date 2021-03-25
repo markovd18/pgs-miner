@@ -68,7 +68,6 @@ public class Ferry extends CargoVehicle<CargoVehicle<?>> {
         if (loadedVehicles.size() < getCapacity()) {
             while (waitingInDock) {
                 try {
-                    System.out.println("Náklaďák " + cargoVehicle.getId() + " čeká na naplnění přívozu.");
                     Ferry.this.wait();     // Acting as a barrier - everyone who loads has to wait until Ferry is filled
                 } catch (InterruptedException e) {
                     System.err.println("Waiting thread was unexpectedly interrupted!\n" + e.getMessage());
@@ -83,7 +82,6 @@ public class Ferry extends CargoVehicle<CargoVehicle<?>> {
         }
 
         loadedVehicles.remove(cargoVehicle);
-        System.out.println("Náklaďák " + cargoVehicle.getId() + " vyjel z přívozu.");
         if (loadedVehicles.isEmpty()) {
             waitingInDock = true;   // All vehicles unloaded, going back to the dock
             Ferry.this.notifyAll();
