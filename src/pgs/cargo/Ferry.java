@@ -75,8 +75,8 @@ public class Ferry extends CargoVehicle<CargoVehicle<?>> {
             }
 
         } else {
-            long secondsToFull = (System.currentTimeMillis() - timeWhenEmptied) / 1000;
-            Logger.getInstance().logEvent(this, "Ferry shipped out! Filled in " + secondsToFull + " seconds.");
+            long millisToFull = System.currentTimeMillis() - timeWhenEmptied;
+            Logger.getInstance().logEvent(this, "Ferry shipped out! Filled in " + millisToFull + " ms.");
             unloadCargo();
             Ferry.this.notifyAll();
         }

@@ -144,8 +144,8 @@ public class Lorry extends CargoVehicle<Integer> {
 
         currentLoad += cargoAmount;
         if (currentLoad == getCapacity()) {
-            long secondsToFull = (System.currentTimeMillis() - timeWhenEmptied) / 1000;
-            Logger.getInstance().logEvent(this, "Lorry is full. Filled in " + secondsToFull + " seconds.");
+            long millisToFull = System.currentTimeMillis() - timeWhenEmptied;
+            Logger.getInstance().logEvent(this, "Lorry is full. Filled in " + millisToFull + " ms.");
         }
 
         loadingInProgress = false;  // Resetting so others may load
